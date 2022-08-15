@@ -24,7 +24,7 @@ void draw_text(char* text)
     return;
 }
 
-char* get_match(char* pinyin, int pinyin_length, hanzi* dictionary, int num_entries, int hint_select)
+char* get_match(char* pinyin, int pinyin_length, hanzi* dictionary, int num_entries, int hint_select, int trad)
 {
     /* find the nth match of our current pinyin in the dictionary */
     int i, j, match, num_matches;
@@ -42,7 +42,7 @@ char* get_match(char* pinyin, int pinyin_length, hanzi* dictionary, int num_entr
         if(match)
         {
             if(num_matches == hint_select)
-                return dictionary[i].simplified;
+                return trad?dictionary[i].traditional:dictionary[i].simplified;
             num_matches++;
         }
     }
@@ -50,17 +50,17 @@ char* get_match(char* pinyin, int pinyin_length, hanzi* dictionary, int num_entr
     return 0;
 }
 
-void draw_hints(char* pinyin, int pinyin_length, hanzi* dictionary, int num_entries, int *hint_select)
+void draw_hints(char* pinyin, int pinyin_length, hanzi* dictionary, int num_entries, int *hint_select, int trad)
 {
     /* draw the candidate hanzi and translations matching the thus-far entered pinyin */
-    int i, j, match, num_matches;
+    int i, j, match, num_matches, translation_index;
 
     if(pinyin_length == 0)
         return;
 
     printw("%s", pinyin);
 
-
+    translation_index = -1;
     num_matches = 0;
     for(i = 0 ; i < num_entries ; i ++)
     {
@@ -73,13 +73,14 @@ void draw_hints(char* pinyin, int pinyin_length, hanzi* dictionary, int num_entr
             if(num_matches == *hint_select)
             {
                 attron(COLOR_PAIR(2));
-                printw( "%s", dictionary[i].simplified);
+                printw( "%s", trad?dictionary[i].traditional:dictionary[i].simplified);
                 attroff(COLOR_PAIR(2));
+                translation_index = i;
             }
         else
             {
                 attron(COLOR_PAIR(1));
-                printw( "%s", dictionary[i].simplified);
+                printw( "%s", trad?dictionary[i].traditional:dictionary[i].simplified);
                 attroff(COLOR_PAIR(1));
             }
             num_matches++;
@@ -88,6 +89,11 @@ void draw_hints(char* pinyin, int pinyin_length, hanzi* dictionary, int num_entr
 
     if(*hint_select >= num_matches)
         *hint_select = -1;
+
+    if(translation_index != -1)
+    {
+       // printw("%s", dictionary[translation_index].translation + 1);
+    }
 
     return;
 }
@@ -164,7 +170,7 @@ int main(int argc, char *argv[])
     char buffer[65536];
     char ch;
     char *str;
-    int hint_select;
+    int hint_select, trad;
 
     /* check args */
     if(argc < 2)
@@ -172,6 +178,10 @@ int main(int argc, char *argv[])
         printf("Need file output arg.\n");
     exit(1);
     }
+    if(argc >= 3)
+        trad = 1;
+    else
+        trad = 0;
 
     /* set locale */
     setlocale(LC_ALL, "en_US.UTF-8");
@@ -212,7 +222,7 @@ int main(int argc, char *argv[])
     {
         clear();
         draw_text(text);
-        draw_hints(pinyin, pinyin_length, dictionary, num_entries, &hint_select);
+        draw_hints(pinyin, pinyin_length, dictionary, num_entries, &hint_select, trad);
         refresh();
     ch = getch();
         switch(ch)
@@ -224,7 +234,7 @@ int main(int argc, char *argv[])
             case '\n':
                 if(hint_select >= 0) /* can't select negative index */
                 {
-                    str = get_match(pinyin, pinyin_length, dictionary, num_entries, hint_select);
+                    str = get_match(pinyin, pinyin_length, dictionary, num_entries, hint_select, trad);
                     sprintf(buffer, "%s%s", text, str);
                     strcpy(text, buffer);
                 pinyin_length = 0;  /* start over */
