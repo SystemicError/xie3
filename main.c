@@ -93,6 +93,8 @@ void draw_hints(char* pinyin, int pinyin_length, hanzi* dictionary, int num_entr
     if(translation_index != -1)
     {
        // printw("%s", dictionary[translation_index].translation + 1);
+        printw("%s", dictionary[translation_index].translation);
+       // printw("%s", dictionary[translation_index].traditional);
     }
 
     return;
@@ -119,7 +121,7 @@ hanzi* load_dictionary(char* path, int* num_entries)
 {
     /* loads a dictionary from path and creates a table of simplified, traditional, pinyin, and translation of each character */
     hanzi *dict;
-    int i;
+    int i, j;
     char simplified[8];
     char traditional[8];
     char pinyin[8];
@@ -140,8 +142,13 @@ hanzi* load_dictionary(char* path, int* num_entries)
             exit(1);
         if(!fscanf(fp, "%s", pinyin))
             exit(1);
-        if(!fgets(translation, TRANSLATION_LENGTH, fp))
-            exit(1);
+        //if(!fgets(translation, TRANSLATION_LENGTH, fp))
+        //if(!fscanf(fp, "%s", translation))
+        //    exit(1);
+        j = 0;
+	while((translation[j] = fgetc(fp)) != '\n')
+	    j++;
+	translation[j] = 0;
 
         strcpy(dict[i].simplified, simplified);
         strcpy(dict[i].traditional, traditional);
